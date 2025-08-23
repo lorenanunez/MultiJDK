@@ -4,12 +4,17 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Image;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ButtonModel;
@@ -17,6 +22,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
@@ -49,6 +55,7 @@ public class JDKVersionChooser extends JDialog {
 		setModal(true);
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		setContentPane(contentPanel);
+		setIconImage(getAppIcon());
 		
 		addWindowListener(new WindowAdapter() {
 			@Override
@@ -103,8 +110,6 @@ public class JDKVersionChooser extends JDialog {
 			choosenJDK = jdkMap.get(group.getSelection());
 			this.dispose();
 			log.debug("Selected JDK: {}", choosenJDK);
-
-			
 			
 			if (rememberChoiceCheckBox.isSelected()) {
 				
@@ -112,8 +117,15 @@ public class JDKVersionChooser extends JDialog {
 					settings.setPreferredJDKPerFile(new HashMap<>());
 				}
 				
-				// TODO put jar file name here
-				settings.getPreferredJDKPerFile().putIfAbsent("test", choosenJDK.getPath());
+				Optional<Arguments> args = ArgumentsHandler.getParsedArguments();
+				
+				if (args.isPresent()) {
+					settings.getPreferredJDKPerFile().put(args.get().getJarPath(), choosenJDK.getPath());
+				} else {
+					JOptionPane.showMessageDialog(this, "Error getting the JAR file path from arguments. Cannot remember the choice.", "Error", JOptionPane.ERROR_MESSAGE);
+					System.exit(1);
+				}
+				
 				SettingsManager.saveSettings(settings);
 			}
 		});
@@ -150,6 +162,18 @@ public class JDKVersionChooser extends JDialog {
 		titlePanel.add(new JLabel(text));
 		
 		return titlePanel;
+	}
+	
+	private Image getAppIcon() {
+		try {
+			InputStream is = JDKVersionChooser.class.getResourceAsStream("/thin-mug-hot.png");
+			Image image = ImageIO.read(is);
+			
+			return image.getScaledInstance(16, 16, Image.SCALE_SMOOTH);
+		} catch (IOException e) {
+			log.error("Error loading app icon", e);
+			return null;
+		}
 	}
 	
 }

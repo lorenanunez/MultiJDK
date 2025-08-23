@@ -1,5 +1,7 @@
 package dev.lorena.multijdk;
 
+import java.util.Optional;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -37,6 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ArgumentsHandler {
 
+	private static Arguments arguments = null;
+	
     /**
      * Parses the command-line arguments and returns an {@link Arguments} object.
      * <p>
@@ -80,7 +84,7 @@ public class ArgumentsHandler {
 			String jarPath = cmd.getOptionValue("jar");
 			String[] jarArgs = cmd.getOptionValues("args");
 			
-			Arguments arguments = new Arguments();
+			arguments = new Arguments();
 			arguments.setVersion(jdkVersion);
 			arguments.setJarPath(jarPath);
 			arguments.setJarArgs(jarArgs != null ? jarArgs : new String[0]);
@@ -91,6 +95,10 @@ public class ArgumentsHandler {
 			return null;
 		}
 		
+	}
+    
+    public static Optional<Arguments> getParsedArguments() {
+		return Optional.ofNullable(arguments);
 	}
 	
 }

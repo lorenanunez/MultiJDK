@@ -37,11 +37,23 @@ public class MultiJDK {
 			
 			if (jdkCount > 1) {
 				log.info("Multiple JDKs found for version: {}", arguments.getVersion());
-				List<JDK> selectedVersionJDKs = jdks.stream().filter(jdk -> jdk.getVersion() == arguments.getVersion()).collect(Collectors.toList());
-				FlatLightLaf.setup();
-				JDKVersionChooser chooser = new JDKVersionChooser(selectedVersionJDKs);
-				JDK selectedJDK = chooser.getChoosenJDK();
-				runner.runJDK(selectedJDK, arguments);
+				
+				if (ArgumentsHandler.getParsedArguments().isPresent()) {
+					Arguments parsedArgs = ArgumentsHandler.getParsedArguments().get();
+					Settings settings = SettingsManager.getSettings();
+					
+					 if (settings.getPreferredJDKPerFile().containsKey(parsedArgs.getJarPath())) {
+						 JDK jdkToRun = new JDK(parsedArgs.getVersion(), settings.getPreferredJDKPerFile().get(parsedArgs.getJarPath()), null);
+						 
+						 runner.runJDK(jdkToRun, arguments);
+					 } else {
+						List<JDK> selectedVersionJDKs = jdks.stream().filter(jdk -> jdk.getVersion() == arguments.getVersion()).collect(Collectors.toList());
+						FlatLightLaf.setup();
+						JDKVersionChooser chooser = new JDKVersionChooser(selectedVersionJDKs);
+						JDK selectedJDK = chooser.getChoosenJDK();
+						runner.runJDK(selectedJDK, arguments);
+					 }
+				}
 			}
 			
 		} catch (Exception ex) {

@@ -7,7 +7,8 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
 
 import com.google.gson.FormattingStyle;
@@ -47,8 +48,8 @@ public class SettingsManager {
 					log.debug("Creating new settings file at {}", file.getAbsolutePath());
 					
 					settings = new Settings();
-					settings.setCustomJDKlocations(Collections.emptyList());
-					settings.setPreferredJDKPerFile(Collections.emptyMap());
+					settings.setCustomJDKlocations(new ArrayList<String>());
+					settings.setPreferredJDKPerFile(new HashMap<String, String>());
 					
 					FileWriter writer = new FileWriter(file);
 					writer.write(gson.toJson(settings));

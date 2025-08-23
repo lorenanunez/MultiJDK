@@ -48,24 +48,26 @@ public class JDKFinder {
      * @return a list of found {@link JDK} objects with version, path, and vendor information
      */
     public List<JDK> findJDKs() {
-		
-		final List<String> jdkLocations = Arrays.asList(
-			"C:\\Program Files\\Java",
-			"C:\\Program Files (x86)\\Java",
-			"C:\\Program Files\\Amazon Corretto",
-			"C:\\Program Files\\Eclipse Adoptium",
-			System.getenv("LOCALAPPDATA") + "\\Programs\\Eclipse Adoptium",
-			"C:\\Program Files\\ojdkbuild\\"
-		);
-		
-		List<JDK> jdks = extractJDKsfromLocations(jdkLocations);
-		log.debug("Searching for JDK installations in common locations:");
-		
-		
-		log.debug("Found JDK installations:");
-		jdks.forEach(jdk -> log.debug("\t{}: {}", jdk.getVersion(), jdk.getPath()));
-		return jdks;
-	}
+        Settings settings = SettingsManager.getSettings();
+        
+        List<String> jdkLocations = new ArrayList<>(Arrays.asList(
+            "C:\\Program Files\\Java",
+            "C:\\Program Files (x86)\\Java",
+            "C:\\Program Files\\Amazon Corretto",
+            "C:\\Program Files\\Eclipse Adoptium",
+            System.getenv("LOCALAPPDATA") + "\\Programs\\Eclipse Adoptium",
+            "C:\\Program Files\\ojdkbuild\\"
+        ));
+        
+        log.debug("Custom JDK locations from settings: {}", settings.getCustomJDKlocations());
+        jdkLocations.addAll(settings.getCustomJDKlocations());
+        
+        List<JDK> jdks = extractJDKsfromLocations(jdkLocations);
+        log.debug("Searching for JDK installations in common locations:");
+        log.debug("Found JDK installations:");
+        jdks.forEach(jdk -> log.debug("\t{}: {}", jdk.getVersion(), jdk.getPath()));
+        return jdks;
+    }
 	
     /**
      * Extracts JDKs from the given list of directory paths.

@@ -11,9 +11,38 @@ import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Utility class to run a JAR file using a specified JDK and arguments.
+ * <p>
+ * This class builds and executes a command to run a JAR file with the selected JDK,
+ * passing any additional arguments as needed. It also handles process input/output streams
+ * and logs errors or process output as appropriate.
+ * </p>
+ *
+ * <p><b>Usage example:</b></p>
+ * <pre>
+ *     JDKRunner runner = new JDKRunner();
+ *     runner.runJDK(jdk, arguments);
+ * </pre>
+ *
+ * @author Lorena Nuñez
+ * @version 1.0
+ * @since 1.0
+ */
 @Slf4j
 public class JDKRunner {
 	
+	/**
+	 * Runs a JAR file using the specified JDK and arguments.
+	 * <p>
+	 * Builds and executes a command to run the JAR file with the selected JDK,
+	 * passing any additional arguments as needed. Handles process input/output streams
+	 * and logs errors or process output as appropriate.
+	 * </p>
+	 *
+	 * @param jdk the {@link JDK} to use for running the JAR
+	 * @param arguments the {@link Arguments} containing the JAR path and arguments
+	 */
 	public void runJDK(JDK jdk, Arguments arguments) {
 		
 		try {
