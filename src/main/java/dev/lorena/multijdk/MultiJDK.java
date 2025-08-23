@@ -22,28 +22,30 @@ public class MultiJDK {
 			System.exit(1);
 		}
 		
-		JDKFinder finder = new JDKFinder();
-		List<JDK> jdks = finder.findJDKs();
-		Arguments arguments = ArgumentsHandler.getArguments(args);
-		JDKRunner runner = new JDKRunner();
-		
-		long jdkCount = jdks.stream().filter(jdk -> jdk.getVersion() == arguments.getVersion()).count();
-		
-		if (jdkCount == 0) {
-			log.error("No JDK found for version: {}", arguments.getVersion());
-			System.exit(1);
-		}
-		
-		if (jdkCount > 1 ) {
-			List<JDK> selectedVersionJDKs = jdks.stream().filter(jdk -> jdk.getVersion() == arguments.getVersion()).collect(Collectors.toList());
-			FlatLightLaf.setup();
-			JDKVersionChooser chooser = new JDKVersionChooser(selectedVersionJDKs);
-			JDK selectedJDK = chooser.getChoosenJDK();
+		try {
+			JDKFinder finder = new JDKFinder();
+			List<JDK> jdks = finder.findJDKs();
+			Arguments arguments = ArgumentsHandler.getArguments(args);
+			JDKRunner runner = new JDKRunner();
 			
-			runner.runJDK(selectedJDK, arguments);
-		} else {
-			JDK jdkToRun = jdks.stream().filter(jdk -> jdk.getVersion() == arguments.getVersion()).findFirst().orElse(null);
-			runner.runJDK(jdkToRun, arguments);
+			long jdkCount = jdks.stream().filter(jdk -> jdk.getVersion() == arguments.getVersion()).count();
+		
+			if (jdkCount == 0) {
+				log.error("No JDK found for version: {}", arguments.getVersion());
+				System.exit(1);
+			}
+			
+			if (jdkCount > 1) {
+				log.info("Multiple JDKs found for version: {}", arguments.getVersion());
+				List<JDK> selectedVersionJDKs = jdks.stream().filter(jdk -> jdk.getVersion() == arguments.getVersion()).collect(Collectors.toList());
+				FlatLightLaf.setup();
+				JDKVersionChooser chooser = new JDKVersionChooser(selectedVersionJDKs);
+				JDK selectedJDK = chooser.getChoosenJDK();
+				runner.runJDK(selectedJDK, arguments);
+			}
+			
+		} catch (Exception ex) {
+			log.error(ex.getMessage(), ex);
 		}
 		
 	}

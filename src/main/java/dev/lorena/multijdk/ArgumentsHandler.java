@@ -11,11 +11,44 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Utility class for handling and parsing command-line arguments for the MultiJDK application.
+ * <p>
+ * This class uses Apache Commons CLI to define and parse the required and optional arguments
+ * for running a JAR file with a specific JDK version. It is designed as a static utility class
+ * and cannot be instantiated.
+ * </p>
+ *
+ * <p>Example usage:</p>
+ * <pre>
+ *     Arguments args = ArgumentsHandler.getArguments(argsArray);
+ * </pre>
+ *
+ * <ul>
+ *   <li><b>-v, --version</b>: JDK version to use (required)</li>
+ *   <li><b>-j, --jar</b>: Path to the JAR file to run (required)</li>
+ *   <li><b>-a, --args</b>: Arguments to pass to the JAR file (optional, multiple allowed)</li>
+ * </ul>
+ *
+ * @author Lorena Nuñez
+ * @version 1.0
+ */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ArgumentsHandler {
 
-	public static Arguments getArguments(String[] args) {
+    /**
+     * Parses the command-line arguments and returns an {@link Arguments} object.
+     * <p>
+     * This method defines the expected options, parses the input arguments, and constructs
+     * an {@link Arguments} instance with the parsed values. If parsing fails, it logs the error
+     * and returns {@code null}.
+     * </p>
+     *
+     * @param args the command-line arguments
+     * @return an {@link Arguments} object with the parsed values, or {@code null} if parsing fails
+     */
+    public static Arguments getArguments(String[] args) {
 		
 		Options options = new Options();
 		

@@ -17,6 +17,9 @@ public class JDK implements Comparable<JDK> {
 		if (versionCompare != 0) {
 			return versionCompare;
 		}
+		if (this.vendor == null && o.vendor == null) return 0;
+		if (this.vendor == null) return -1;
+		if (o.vendor == null) return 1;
 		return this.vendor.compareToIgnoreCase(o.vendor);
 	}
 	

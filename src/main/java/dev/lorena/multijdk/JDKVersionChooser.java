@@ -2,6 +2,7 @@ package dev.lorena.multijdk;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -13,6 +14,7 @@ import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ButtonModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -27,9 +29,12 @@ import lombok.extern.slf4j.Slf4j;
 public class JDKVersionChooser extends JDialog {
 	
 	private final Map<ButtonModel, JDK> jdkMap = new HashMap<>();
+	private transient Settings settings = null;
 	private transient JDK choosenJDK = null;
 	
 	public JDKVersionChooser(List<JDK> jdks) {
+		
+		settings = SettingsManager.getSettings();
 		
 		JPanel contentPanel = new JPanel();
 		BorderLayout layout = new BorderLayout();
@@ -38,6 +43,7 @@ public class JDKVersionChooser extends JDialog {
 		
 		setTitle("Choose JDK Version");
 		setSize(600, 250);
+		setMinimumSize(new Dimension(600, 250));
 		setLocationRelativeTo(null);
 		setResizable(true);
 		setModal(true);
@@ -51,11 +57,11 @@ public class JDKVersionChooser extends JDialog {
 			}
 		});
 		
+		JCheckBox rememberChoiceCheckBox = buildCheckBoxPanel();
 		Component jdkList = buildJDKsListComponent(jdks);
-		
 		contentPanel.add(buildTitlePanel(), BorderLayout.NORTH);
 		contentPanel.add(jdkList, BorderLayout.CENTER);
-		contentPanel.add(buildButtonsPanel(jdkList), BorderLayout.SOUTH);
+		contentPanel.add(buildBottomPanel(rememberChoiceCheckBox, buildButtonsPanel(jdkList, rememberChoiceCheckBox)), BorderLayout.SOUTH);
 		
 		this.setVisible(true);
 	}
@@ -85,7 +91,7 @@ public class JDKVersionChooser extends JDialog {
 		return new JScrollPane(panel);
 	}
 	
-	private Component buildButtonsPanel(Component jdkListComponent) {
+	private Component buildButtonsPanel(Component jdkListComponent, JCheckBox rememberChoiceCheckBox) {
 		JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 		JButton selectButton = new JButton("Select");
 		JButton cancelButton = new JButton("Cancel");
@@ -97,6 +103,19 @@ public class JDKVersionChooser extends JDialog {
 			choosenJDK = jdkMap.get(group.getSelection());
 			this.dispose();
 			log.debug("Selected JDK: {}", choosenJDK);
+
+			
+			
+			if (rememberChoiceCheckBox.isSelected()) {
+				
+				if (settings.getPreferredJDKPerFile() == null) {
+					settings.setPreferredJDKPerFile(new HashMap<>());
+				}
+				
+				// TODO put jar file name here
+				settings.getPreferredJDKPerFile().putIfAbsent("test", choosenJDK.getPath());
+				SettingsManager.saveSettings(settings);
+			}
 		});
 		cancelButton.addActionListener(e -> System.exit(0));
 
@@ -104,6 +123,22 @@ public class JDKVersionChooser extends JDialog {
 		buttonsPanel.add(cancelButton);
 
 		return buttonsPanel;
+	}
+	
+	
+	private JCheckBox buildCheckBoxPanel() {
+		JCheckBox rememberChoiceCheckBox = new JCheckBox("Remember this JDK for this JAR");
+		rememberChoiceCheckBox.setSelected(true);
+		return rememberChoiceCheckBox;
+	}
+	private Component buildBottomPanel(Component rememberComboBox, Component buttonsComponent) {
+		JPanel bottomPanel = new JPanel();
+		bottomPanel.setLayout(new BorderLayout());
+		
+		bottomPanel.add(rememberComboBox, BorderLayout.EAST);
+		bottomPanel.add(buttonsComponent, BorderLayout.WEST);
+		
+		return bottomPanel;
 	}
 	
 	private Component buildTitlePanel() {
