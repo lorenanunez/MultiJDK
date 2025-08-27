@@ -8,7 +8,7 @@ Usage: ```jdk <version> <jarfile> <args (optional)>```
 For example:
 * ```jdk 8 myapp.jar```
 * ```jdk 11 -Xmx524M otherapp.jar arg1 arg2```
-* 
+
 ### Pre-requisites:
 * Java 1.8+
 * PowerShell
