@@ -14,6 +14,7 @@ import java.util.Scanner;
 import com.google.gson.FormattingStyle;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -48,8 +49,8 @@ public class SettingsManager {
 					log.debug("Creating new settings file at {}", file.getAbsolutePath());
 					
 					settings = new Settings();
-					settings.setCustomJDKlocations(new ArrayList<String>());
-					settings.setPreferredJDKPerFile(new HashMap<String, String>());
+					settings.setCustomJDKlocations(new ArrayList<>());
+					settings.setPreferredJDKPerFile(new HashMap<>());
 					
 					FileWriter writer = new FileWriter(file);
 					writer.write(gson.toJson(settings));
@@ -72,6 +73,9 @@ public class SettingsManager {
 				
 				sc.close();
 			}
+		} catch (JsonSyntaxException ex) {
+			log.error("Settings file is corrupted. Please fix or delete it.");
+			System.exit(0);
 		} catch (Exception ex) {
 			log.error("An error has ocurred", ex);
 		}

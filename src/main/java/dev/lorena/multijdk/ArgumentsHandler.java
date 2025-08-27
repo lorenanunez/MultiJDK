@@ -1,10 +1,15 @@
 package dev.lorena.multijdk;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -52,7 +57,7 @@ public class ArgumentsHandler {
      * @param args the command-line arguments
      * @return an {@link Arguments} object with the parsed values, or {@code null} if parsing fails
      */
-    public static Arguments getArguments(String[] args) {
+    public static Arguments getArguments(String[] args) throws MissingOptionException, NullPointerException {
 		
 		Options options = new Options();
 		
@@ -72,8 +77,14 @@ public class ArgumentsHandler {
 		
 		options.addOption(Option.builder("a")
 				.longOpt("args")
-				.desc("Arguments to pass to the JAR file")
+				.desc("Arguments to pass to the JVM")
 				.hasArgs()
+				.get());
+		
+		options.addOption(Option.builder("p")
+				.longOpt("params")
+				.desc("Params to pass to the JAR file")
+				.hasArg()
 				.get());
 		
 		CommandLineParser parser = new DefaultParser();
@@ -82,16 +93,24 @@ public class ArgumentsHandler {
 			CommandLine cmd = parser.parse(options, args);
 			int jdkVersion = Integer.parseInt(cmd.getOptionValue("version"));
 			String jarPath = cmd.getOptionValue("jar");
-			String[] jarArgs = cmd.getOptionValues("args");
+			
+			String[] unknownJvmArguments = cmd.getOptionValues("args");
+			String[] unknownJarParams = cmd.getOptionValues("params");
+			
+			Set<String> jvmArgs = (unknownJvmArguments != null) ? Arrays.asList(unknownJvmArguments).stream().collect(Collectors.toSet()) : Collections.emptySet();
+			Set<String> jarParams = (unknownJarParams != null) ? Arrays.asList(unknownJarParams).stream().collect(Collectors.toSet()) : Collections.emptySet();
 			
 			arguments = new Arguments();
 			arguments.setVersion(jdkVersion);
 			arguments.setJarPath(jarPath);
-			arguments.setJarArgs(jarArgs != null ? jarArgs : new String[0]);
+			arguments.setJvmArgs(jvmArgs);
+			arguments.setJarParams(jarParams);
 			
 			return arguments;
 		} catch (ParseException e) {
-			log.error("Failed to parse command line arguments", e);
+			log.error("Failed to parse command line arguments");
+			log.info("Usage: jdk <version> [-a <arg1> <arg2> ...] <jarPath> [-p <param1> <param2> ...]");
+			System.exit(1);
 			return null;
 		}
 		

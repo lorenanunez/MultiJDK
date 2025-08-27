@@ -5,9 +5,12 @@ import java.util.stream.Collectors;
 
 import com.formdev.flatlaf.FlatLightLaf;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class MultiJDK {
 	
 	public static void main(String[] args) {
@@ -17,34 +20,46 @@ public class MultiJDK {
 			System.exit(1);
 		}
 		
-		if (args.length > 3 && args.length < 2) {
-			log.error("Usage: jdk <version> <jar> [-a <args>]");
-			System.exit(1);
-		}
-		
 		try {
 			JDKFinder finder = new JDKFinder();
 			List<JDK> jdks = finder.findJDKs();
 			Arguments arguments = ArgumentsHandler.getArguments(args);
-			JDKRunner runner = new JDKRunner();
 			
-			long jdkCount = jdks.stream().filter(jdk -> jdk.getVersion() == arguments.getVersion()).count();
+			log.debug("Found arguments: {}", arguments);
+			
+			int jdkCount = (int) jdks.stream().filter(jdk -> jdk.getVersion() == arguments.getVersion()).count();
 		
-			if (jdkCount == 0) {
+			runMultiJDK(jdkCount, jdks);
+			
+		} catch (Exception ex) {
+			log.error(ex.getMessage(), ex);
+		}
+		
+	}
+	
+	private static void runMultiJDK(int jdkCount, List<JDK> jdks) {
+		JDKRunner runner = new JDKRunner();
+		Arguments arguments = ArgumentsHandler.getParsedArguments().orElseThrow(null);
+		JDK jdkToRun = null;
+		
+		switch (jdkCount) {
+			case 0:
 				log.error("No JDK found for version: {}", arguments.getVersion());
 				System.exit(1);
-			}
-			
-			if (jdkCount > 1) {
+				break;
+			case 1:
+				jdkToRun = jdks.stream().filter(j -> j.getVersion() == arguments.getVersion())
+								.collect(Collectors.toList())
+								.get(0);
+				runner.runJDK(jdkToRun, arguments);
+				break;
+			default:
 				log.info("Multiple JDKs found for version: {}", arguments.getVersion());
-				
 				if (ArgumentsHandler.getParsedArguments().isPresent()) {
-					Arguments parsedArgs = ArgumentsHandler.getParsedArguments().get();
 					Settings settings = SettingsManager.getSettings();
 					
-					 if (settings.getPreferredJDKPerFile().containsKey(parsedArgs.getJarPath())) {
-						 JDK jdkToRun = new JDK(parsedArgs.getVersion(), settings.getPreferredJDKPerFile().get(parsedArgs.getJarPath()), null);
-						 
+					 if (settings.getPreferredJDKPerFile().containsKey(arguments.getJarPath())) {
+						 jdkToRun = new JDK(arguments.getVersion(), settings.getPreferredJDKPerFile().get(arguments.getJarPath()), null);
 						 runner.runJDK(jdkToRun, arguments);
 					 } else {
 						List<JDK> selectedVersionJDKs = jdks.stream().filter(jdk -> jdk.getVersion() == arguments.getVersion()).collect(Collectors.toList());
@@ -54,12 +69,8 @@ public class MultiJDK {
 						runner.runJDK(selectedJDK, arguments);
 					 }
 				}
-			}
-			
-		} catch (Exception ex) {
-			log.error(ex.getMessage(), ex);
+				break;
 		}
-		
 	}
 
 }
