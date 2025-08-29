@@ -13,6 +13,7 @@ import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang3.StringUtils;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -38,7 +39,8 @@ import lombok.extern.slf4j.Slf4j;
  * </ul>
  *
  * @author Lorena Nuñez
- * @version 1.0
+ * @since 1.0
+ * @version 1.2
  */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -91,7 +93,14 @@ public class ArgumentsHandler {
 		
 		try {
 			CommandLine cmd = parser.parse(options, args);
-			int jdkVersion = Integer.parseInt(cmd.getOptionValue("version"));
+			String v = cmd.getOptionValue("version");
+			
+			if (!StringUtils.isNumeric(v)) {
+				log.error("JDK version must be a number");
+				System.exit(1);
+			}
+			
+			int jdkVersion = Integer.parseInt(v);
 			String jarPath = cmd.getOptionValue("jar");
 			
 			String[] unknownJvmArguments = cmd.getOptionValues("args");
@@ -106,14 +115,16 @@ public class ArgumentsHandler {
 			arguments.setJvmArgs(jvmArgs);
 			arguments.setJarParams(jarParams);
 			
+			log.debug("Parsed arguments: {}", arguments);
 			return arguments;
 		} catch (ParseException e) {
 			log.error("Failed to parse command line arguments");
 			log.info("Usage: jdk <version> [-a <arg1> <arg2> ...] <jarPath> [-p <param1> <param2> ...]");
 			System.exit(1);
-			return null;
 		}
 		
+		// This return is unreachable, but required for compilation
+		return null;
 	}
     
     public static Optional<Arguments> getParsedArguments() {

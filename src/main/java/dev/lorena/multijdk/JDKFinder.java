@@ -16,7 +16,6 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -33,11 +32,10 @@ import lombok.extern.slf4j.Slf4j;
  * </pre>
  *
  * @author Lorena Nuñez
- * @version 1.1
+ * @version 1.3
  * @since 1.0
  */
 @Slf4j
-@NoArgsConstructor
 public class JDKFinder {
     /**
      * Searches for installed JDKs in common locations on the system.
@@ -50,14 +48,23 @@ public class JDKFinder {
     public List<JDK> findJDKs() {
         Settings settings = SettingsManager.getSettings();
         
+        String programFiles = System.getenv("ProgramW6432");
+        String programFilesx86 = System.getenv("ProgramFiles(x86)");
+        String localAppData = System.getenv("LOCALAPPDATA");
+        
+        
         List<String> jdkLocations = new ArrayList<>(Arrays.asList(
-            "C:\\Program Files\\Java",
-            "C:\\Program Files (x86)\\Java",
-            "C:\\Program Files\\Amazon Corretto",
-            "C:\\Program Files\\Eclipse Adoptium",
-            System.getenv("LOCALAPPDATA") + "\\Programs\\Eclipse Adoptium",
-            "C:\\Program Files\\ojdkbuild\\"
+            programFiles + "\\Java",
+            programFilesx86 + "\\Java",
+            programFiles + "\\Amazon Corretto",
+            programFiles + "\\Eclipse Adoptium",
+            localAppData + "\\Programs\\Eclipse Adoptium",
+            localAppData + "\\Programs\\Microsoft",
+            programFiles + "\\ojdkbuild\\",
+            programFiles + "\\Microsoft\\"
         ));
+        
+        log.trace(jdkLocations.toString());
         
         log.debug("Custom JDK locations from settings: {}", settings.getCustomJDKlocations());
         jdkLocations.addAll(settings.getCustomJDKlocations());
@@ -100,10 +107,15 @@ public class JDKFinder {
         		
         		File releaseFile = FileUtils.getFile(file.getParentFile().getParentFile().getAbsolutePath(), "release");
         		
-        		int version = extractVersionFromReleaseFile(releaseFile);
-        		String jdkPath = file.getAbsolutePath();
-        		String vendor = extractVendorFromReleaseFile(releaseFile);
-        		jdks.add(new JDK(version,jdkPath, vendor));
+        		if (releaseFile != null && releaseFile.exists() && releaseFile.canRead()) {
+        			int version = extractVersionFromReleaseFile(releaseFile);
+	        		String jdkPath = file.getAbsolutePath();
+	        		String vendor = extractVendorFromReleaseFile(releaseFile);
+	        		jdks.add(new JDK(version,jdkPath, vendor));
+        		} else {
+        			log.error("There was an error reading the RELEASE file for JDK at path: {}", file.getAbsolutePath());
+        		}
+        		
         	});
         });
         return jdks;
@@ -124,9 +136,9 @@ public class JDKFinder {
 		Properties properties = getPropertiesFromReleaseFile(file);
 
 		String version = properties.getProperty("JAVA_VERSION").replace("\"", "");
-		String numbers = StringUtils.getDigits(version);
+ 		String numbers = StringUtils.getDigits(version);
 
-		if (numbers.startsWith("1") && !numbers.startsWith("11")) {
+		if (version.startsWith("1.")) {
 			numericVersion = Integer.parseInt(String.valueOf(numbers.charAt(1)));
 		} else if (numbers.startsWith("9")) {
 			numericVersion = Integer.parseInt(String.valueOf(numbers.charAt(0)));
