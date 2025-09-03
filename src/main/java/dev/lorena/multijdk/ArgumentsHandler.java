@@ -1,7 +1,8 @@
 package dev.lorena.multijdk;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @author Lorena Nuñez
  * @since 1.0
- * @version 1.2
+ * @version 1.3
  */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -106,8 +107,16 @@ public class ArgumentsHandler {
 			String[] unknownJvmArguments = cmd.getOptionValues("args");
 			String[] unknownJarParams = cmd.getOptionValues("params");
 			
-			Set<String> jvmArgs = (unknownJvmArguments != null) ? Arrays.asList(unknownJvmArguments).stream().collect(Collectors.toSet()) : Collections.emptySet();
-			Set<String> jarParams = (unknownJarParams != null) ? Arrays.asList(unknownJarParams).stream().collect(Collectors.toSet()) : Collections.emptySet();
+			Set<String> jvmArgs = (unknownJvmArguments != null) ? Arrays.asList(unknownJvmArguments).stream().collect(Collectors.toSet()) : new HashSet<>();
+			Set<String> jarParams = (unknownJarParams != null) ? Arrays.asList(unknownJarParams).stream().collect(Collectors.toSet()) : new HashSet<>();
+
+			boolean hasEncodingArg = jvmArgs.stream().anyMatch(arg -> arg.toLowerCase().startsWith("-dfile.encoding="));
+			
+			if (!hasEncodingArg) {
+				String argument = String.format("-Dfile.encoding=%s", Charset.defaultCharset());
+				log.debug("Encoding argument was not found, injecting argument: {}", argument);
+				jvmArgs.add(argument);
+			}
 			
 			arguments = new Arguments();
 			arguments.setVersion(jdkVersion);
