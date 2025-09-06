@@ -3,38 +3,40 @@ package dev.lorena.multijdk;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.SystemUtils;
+
 import com.formdev.flatlaf.FlatLightLaf;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class MultiJDK {
 	
+	@SneakyThrows
 	public static void main(String[] args) {
 		
-		if (!System.getProperty("os.name").toLowerCase().contains("windows")) {
-			log.error("MultiJDK is only supported on Windows. For now.");
-			System.exit(1);
+		JDKFinder finder = null;
+		
+		if (SystemUtils.IS_OS_WINDOWS) {
+			finder = new JDKFinder("windows");
+		} else if (SystemUtils.IS_OS_LINUX) {
+			finder = new JDKFinder("linux");
+		} else if (SystemUtils.IS_OS_MAC) {
+			log.error("MacOS is not supported yet.");
 		}
 		
-		try {
-			JDKFinder finder = new JDKFinder();
-			List<JDK> jdks = finder.findJDKs();
-			Arguments arguments = ArgumentsHandler.getArguments(args);
+		List<JDK> jdks = finder.findJDKs();
+		Arguments arguments = ArgumentsHandler.getArguments(args);
 			
-			log.debug("Found arguments: {}", arguments);
-			
-			int jdkCount = (int) jdks.stream().filter(jdk -> jdk.getVersion() == arguments.getVersion()).count();
+		log.debug("Found arguments: {}", arguments);
 		
-			runMultiJDK(jdkCount, jdks);
-			
-		} catch (Exception ex) {
-			log.error(ex.getMessage(), ex);
-		}
+		int jdkCount = (int) jdks.stream().filter(jdk -> jdk.getVersion() == arguments.getVersion()).count();
 		
+		runMultiJDK(jdkCount, jdks);
 	}
 	
 	private static void runMultiJDK(int jdkCount, List<JDK> jdks) {

@@ -15,7 +15,9 @@ import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.SystemUtils;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -32,11 +34,15 @@ import lombok.extern.slf4j.Slf4j;
  * </pre>
  *
  * @author Lorena Nuñez
- * @version 1.3
+ * @version 1.4
  * @since 1.0
  */
 @Slf4j
+@RequiredArgsConstructor
 public class JDKFinder {
+	
+    private final String os;
+	
     /**
      * Searches for installed JDKs in common locations on the system.
      * <p>
@@ -48,33 +54,52 @@ public class JDKFinder {
     public List<JDK> findJDKs() {
         Settings settings = SettingsManager.getSettings();
         
-        String programFiles = System.getenv("ProgramW6432");
-        String programFilesx86 = System.getenv("ProgramFiles(x86)");
-        String localAppData = System.getenv("LOCALAPPDATA");
+        List<String> locations = getCommonLocationsForOS(os);
         
-        
-        List<String> jdkLocations = new ArrayList<>(Arrays.asList(
-            programFiles + "\\Java",
-            programFilesx86 + "\\Java",
-            programFiles + "\\Amazon Corretto",
-            programFiles + "\\Eclipse Adoptium",
-            localAppData + "\\Programs\\Eclipse Adoptium",
-            localAppData + "\\Programs\\Microsoft",
-            programFiles + "\\ojdkbuild\\",
-            programFiles + "\\Microsoft\\"
-        ));
-        
-        log.trace(jdkLocations.toString());
+        log.trace(locations.toString());
         
         log.debug("Custom JDK locations from settings: {}", settings.getCustomJDKlocations());
-        jdkLocations.addAll(settings.getCustomJDKlocations());
+        locations.addAll(settings.getCustomJDKlocations());
         
-        List<JDK> jdks = extractJDKsfromLocations(jdkLocations);
+        List<JDK> jdks = extractJDKsfromLocations(locations);
         log.debug("Searching for JDK installations in common locations:");
         log.debug("Found JDK installations:");
         jdks.forEach(jdk -> log.debug("\t{}: {}", jdk.getVersion(), jdk.getPath()));
         return jdks;
     }
+    
+    private List<String> getCommonLocationsForOS(String os) {
+		List<String> locations = new ArrayList<>();
+		switch (os.toUpperCase()) {
+			case "WINDOWS":
+				String programFiles = System.getenv("ProgramW6432");
+				String programFilesx86 = System.getenv("ProgramFiles(x86)");
+				String localAppData = System.getenv("LOCALAPPDATA");
+				
+				locations = new ArrayList<>(Arrays.asList(
+					programFiles + "\\Java",
+					programFilesx86 + "\\Java",
+					programFiles + "\\Amazon Corretto",
+					programFiles + "\\Eclipse Adoptium",
+					localAppData + "\\Programs\\Eclipse Adoptium",
+					localAppData + "\\Programs\\Microsoft",
+					programFiles + "\\ojdkbuild\\",
+					programFiles + "\\Microsoft\\"
+				));
+				break;
+			case "LINUX":
+				locations = new ArrayList<>(Arrays.asList(
+					"/usr/lib/jvm/",
+					"/usr/java/",
+					"/opt/",
+					"/home/"
+				));
+				break;
+			default:
+				log.error("Unknown OS: {}. MultiJDK is only supported on Windows. For now.", os);
+		}
+		return locations;
+	}
 	
     /**
      * Extracts JDKs from the given list of directory paths.
@@ -94,10 +119,10 @@ public class JDKFinder {
 			}
 			@Override
 			public boolean accept(File dir, String name) {
-				boolean isJavaExe = name.equalsIgnoreCase("java.exe");
+				boolean isJavaExec = (SystemUtils.IS_OS_WINDOWS) ? name.equalsIgnoreCase("java.exe") : name.equalsIgnoreCase("java");
 		        boolean pathContainsJdk = Strings.CI.contains(dir.getAbsolutePath(), "jdk");
 		        boolean pathDontContainsJre = !Strings.CI.contains(dir.getAbsolutePath(), "jre");
-		        return isJavaExe && pathContainsJdk && pathDontContainsJre;
+		        return isJavaExec && pathContainsJdk && pathDontContainsJre;
 			}
         };
         
